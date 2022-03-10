@@ -2,7 +2,7 @@
 const { Router } = require('express');
 const { Status } = require('./db');
 const status_500 = require('./modules/status_500');
-const Joi = require('xavisoft-joi');
+const Joi = require('./modules/Joi');
 
 
 const systemStatus =  {
