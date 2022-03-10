@@ -10,8 +10,8 @@ if (process.env.NODE_ENV === 'production')
 else
 	mongo_url = 'mongodb://localhost:27017/water-leakage';
 
-// mongoose.connect(mongo_url);
-console.log(mongo_url);
+mongoose.connect(mongo_url);
+// console.log(mongo_url);
 
 
 module.exports = {
