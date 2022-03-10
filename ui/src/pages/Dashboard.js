@@ -8,7 +8,7 @@ import TableCell from '@mui/material/TableCell';
 import DatetimeRangePicker from '../components/DatetimeRangePicker';
 import { connect } from 'react-redux';
 import actions from '../actions';
-import axios from 'axios';
+import axios from '../axios';
 import { Line } from "react-chartjs-2";
 import Divider from '@mui/material/Divider';
 
@@ -204,6 +204,10 @@ class History extends Component {
 			await this.updateState({ data });
 		} catch (err) {
 			console.log(err);
+
+			const { response } = err;
+			console.log(response);
+
 			alert('Something bad happened.');
 		}
 
@@ -239,6 +243,8 @@ class History extends Component {
 
 		const labels = [];
 		const datasets = [ waterLevelDataset, outflowRateDataset, inflowRateDataset ];
+
+		console.log(data);
 
 		data.forEach(datum => {
 

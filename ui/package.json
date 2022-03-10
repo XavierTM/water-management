@@ -51,5 +51,6 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:8080"
+  "proxy": "http://water-management.herokuapp.com",
+  "_proxy": "http://localhost:8080"
 }
