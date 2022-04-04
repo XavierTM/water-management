@@ -40,7 +40,7 @@ function App() {
 
 			<Navbar />
 
-			<AppWrapper>
+			<AppWrapper router="hash">
 
 				<Route path="/" component={Dashboard} />
 			</AppWrapper>

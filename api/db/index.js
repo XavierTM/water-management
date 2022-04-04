@@ -1,6 +1,7 @@
 
 const mongoose = require('mongoose');
 const Status = require('./Status');
+const Daily = require('./Daily');
 
 const password = encodeURIComponent('coolFEB&#16');
 // console.log(password);
@@ -15,5 +16,6 @@ mongoose.connect(mongo_url);
 
 
 module.exports = {
+	Daily,
 	Status
 }

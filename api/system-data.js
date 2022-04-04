@@ -3,12 +3,34 @@ const { Router } = require('express');
 const { Status } = require('./db');
 const status_500 = require('./modules/status_500');
 const Joi = require('./modules/Joi');
+const { init: initML, calculateTodayWaterUsage, predictTodayWaterUsage,  } = require('./ml');
+const { isItANewDay } = require('./utils');
 
 
 const systemStatus =  {
 	leakage: false,
-	water_level: null
+	water_level: null,
+	daily_usage: 0, // probably a good idea to retrieve 
+	// anomalyDetected: false,
 }
+
+
+
+async function newDayCode() {
+
+	// return if not a new day
+	if (!isItANewDay())
+		return;
+
+	systemStatus.daily_usage = 0;
+
+	// predict water usage
+	systemStatus.predictedWaterUsageValue = await predictTodayWaterUsage();
+	// systemStatus.maximumExpected = systemStatus.predictedWaterUsageValue * 1.05;
+	// systemStatus.anomalyDetected = false;
+
+}
+
 
 
 function random(max) {
@@ -33,7 +55,10 @@ async function getSystemData(req, res) {
 			water_level,
 			inflow_rate,
 			outflow_rate,
-			leakage: systemStatus.leakage
+			leakage: systemStatus.leakage,
+			daily_usage: systemStatus.daily_usage,
+			// anomaly_detected: systemStatus.anomalyDetected,
+			predicted_usage: systemStatus.predictedWaterUsageValue
 		};
 
 		res.send(data);
@@ -88,25 +113,38 @@ async function postSystemData(req, res) {
 
 				const averageInflowRate = (prevInflowRate + inflow_rate) / 2;
 				const averageOutflowRate = (prevOutflowRate + outflow_rate) / 2;
-				const expectedWaterDelta = (averageOutflowRate - averageInflowRate)  * (Date.now() - systemStatus.lastStatusUpdate) / 1000;
+				const TIME = (Date.now() - systemStatus.lastStatusUpdate) / 60000;
+				const expectedWaterDelta = (averageOutflowRate - averageInflowRate)  * TIME;
 
-				const actualWaterLevel = actualWaterLevel;
+				const actualWaterLevel = water_level;
 				const expectedWaterLevel = prevWaterLevel - expectedWaterDelta;
 
 				const deviation = (actualWaterLevel - expectedWaterDelta) / expectedWaterDelta * 100;
 
 				systemStatus.leakage = Math.abs(deviation) > 3;
 
+				// console.log({
+				// 	prevWaterLevel,
+				// 	deviation,
+				// 	averageInflowRate,
+				// 	averageInflowRate,
+				// 	expectedWaterDelta,
+				// 	expectedWaterLevel,
+				// 	actualWaterLevel,
+				// 	leakage: systemStatus.leakage,
+				// });
+
+
+				// update daily water usage
+				systemStatus.daily_usage += TIME * averageOutflowRate;
 				console.log({
-					prevWaterLevel,
-					deviation,
-					averageInflowRate,
-					averageInflowRate,
-					expectedWaterDelta,
-					expectedWaterLevel,
-					actualWaterLevel,
-					leakage: systemStatus.leakage,
-				});
+					TIME, averageOutflowRate
+				})
+
+				// if (systemStatus.daily_usage > systemStatus.maximumExpected) {
+				// 	// alert user about it
+				// 	systemStatus.anomalyDetected = true;
+				// }
 
 			}
 
@@ -115,6 +153,7 @@ async function postSystemData(req, res) {
 			systemStatus.water_level = water_level;
 			systemStatus.outflow_rate = outflow_rate;
 			systemStatus.inflow_rate = inflow_rate;
+
 
 		} catch (err) {
 			console.log(err);
@@ -164,3 +203,17 @@ router.get('/history', getHistory);
 
 
 module.exports = router;
+
+
+(async() => {
+
+	await initML();
+
+	systemStatus.predictedWaterUsageValue = await predictTodayWaterUsage();
+	// systemStatus.maximumExpected = systemStatus.predictedWaterUsageValue * 1.05;
+	systemStatus.daily_usage = await calculateTodayWaterUsage();
+	// systemStatus.anomalyDetected = false;
+
+
+	setTimeout(newDayCode, 4000);
+})()

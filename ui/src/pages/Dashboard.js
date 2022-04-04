@@ -13,6 +13,32 @@ import { Line } from "react-chartjs-2";
 import Divider from '@mui/material/Divider';
 
 
+// format
+function twoDigits(d) {
+
+	if (d < 10)
+		return '0' + d;
+
+	return d.toString();
+
+}
+
+function formatDate(timestamp) {
+
+	const date = new Date(timestamp);
+
+	const year = date.getFullYear();
+	const month = date.getMonth() + 1;
+	const day = date.getDate();
+
+	const m = twoDigits(date.getMinutes());
+	const s = twoDigits(date.getSeconds());
+	const h = twoDigits(date.getHours());
+
+	return `${year}-${month}-${day}@${h}:${m}:${s}`;
+}
+
+
 class Dashboard extends Page {
 
 
@@ -126,9 +152,35 @@ function Row({ data, label }) {
 function SystemData(props) {
 
 	const { data } = props;
-	const { outflow_rate, inflow_rate, leakage, water_level, water_level_percentage } = data;
+	const { 
+		outflow_rate, 
+		inflow_rate, 
+		leakage, 
+		water_level, 
+		water_level_percentage,  
+		daily_usage,
+		predicted_usage
+	} = data;
 
 	const level_data = `${water_level} litres (${water_level_percentage}%)`;
+
+	let anomalyColor, anomalyCaption;
+
+	if (daily_usage > predicted_usage * 1.05) {
+		anomalyCaption = 'YES'
+		anomalyColor = 'red';
+	} else {
+		anomalyColor = 'green';
+		anomalyCaption = 'NO'
+	}
+
+
+	const anomalyDetectedJSX = <b style={{ color: anomalyColor }}>
+		{anomalyCaption}
+	</b>
+
+	const dailyUsageJSX = `${parseInt(daily_usage)} litres`;
+	const predictedUsageJSX = `${parseInt(predicted_usage)} litres`;
 
 
 	return <Table>
@@ -137,7 +189,10 @@ function SystemData(props) {
 			<Row label="Level" data={level_data} />
 			<Row label="Outflow rate" data={outflow_rate} />
 			<Row label="Inflow rate" data={inflow_rate} />
-			<Row label="Leakage" data={ leakage ? 'YES' : 'NO' } />			
+			<Row label="Leakage" data={ leakage ? 'YES' : 'NO' } />	
+			<Row label="Daily Usage" data={dailyUsageJSX}  />
+			<Row label="Predicted Usage" data={predictedUsageJSX}  />	
+			<Row label="Anomaly Detected" data={anomalyDetectedJSX}  />		
 		</TableBody>
 
 	</Table>
@@ -249,7 +304,7 @@ class History extends Component {
 		data.forEach(datum => {
 
 			const { water_level, created_at, inflow_rate, outflow_rate } = datum;
-			labels.push(new Date(created_at));
+			labels.push(formatDate(created_at));
 
 			console.log(created_at);
 
